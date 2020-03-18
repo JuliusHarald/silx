@@ -27,7 +27,6 @@ __authors__ = ["V. Valls"]
 __license__ = "MIT"
 __date__ = "15/01/2019"
 
-
 import os
 import collections
 import logging
@@ -43,7 +42,6 @@ from .CustomNxdataWidget import CustomNxDataToolBar
 from . import utils
 from silx.gui.utils import projecturl
 from .DataPanel import DataPanel
-
 
 _logger = logging.getLogger(__name__)
 
@@ -112,9 +110,19 @@ class Viewer(qt.QMainWindow):
 
         self.__dataPanel = DataPanel(self, self.__context)
 
+        self._tabCount = 1
         spliter = qt.QSplitter(self)
+        self._tabs = qt.QTabWidget()
+        self._tabs.setTabsClosable(True)  # TODO only closeable if tabs >= 2
+        self._tabs.tabCloseRequested.connect(self.closeTab)
+        dockWidget = qt.QDockWidget()
+        dockWidget.setWidget(self.__dataPanel)
+        widget = qt.QMainWindow()
+        widget.addDockWidget(qt.Qt.RightDockWidgetArea, dockWidget)
+        self._tabs.addTab(widget, "Tab " + str(self._tabCount))  # TODO use more expressive tab title
+        self._tabCount += 1
         spliter.addWidget(rightPanel)
-        spliter.addWidget(self.__dataPanel)
+        spliter.addWidget(self._tabs)
         spliter.setStretchFactor(1, 1)
         self.__splitter = spliter
 
@@ -851,6 +859,22 @@ class Viewer(qt.QMainWindow):
         model = self.__customNxdata.model()
         model.createFromNxdata(h5nxdata)
 
+    def _displayInNewTab(self, data):
+        dock_widget = qt.QDockWidget("Tab " + str(self._tabCount), self)
+        widget = DataPanel(self, self.__context)
+        widget.setData(data)
+        dock_widget.setWidget(widget)
+        window = qt.QMainWindow()
+        window.addDockWidget(qt.Qt.RightDockWidgetArea, dock_widget)
+        self._tabs.addTab(window, "Tab " + str(self._tabCount))  # TODO use more expressive title
+        self._tabCount += 1
+
+    def closeTab(self, currentIndex):
+        currentWidget = self._tabs.widget(currentIndex)
+        currentWidget.deleteLater()
+        self._tabs.removeTab(currentIndex)
+        self._tabCount -= 1
+
     def customContextMenu(self, event):
         """Called to populate the context menu
 
@@ -879,6 +903,9 @@ class Viewer(qt.QMainWindow):
             if silx.io.is_dataset(h5):
                 action = qt.QAction("Use as a new custom signal", event.source())
                 action.triggered.connect(lambda: self.useAsNewCustomSignal(h5))
+                menu.addAction(action)
+                action = qt.QAction("Open in new Tab", event.source())
+                action.triggered.connect(lambda: self._displayInNewTab(h5))
                 menu.addAction(action)
 
             if silx.io.is_group(h5) and silx.io.nxdata.is_valid_nxdata(h5):
