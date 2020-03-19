@@ -111,25 +111,25 @@ class Viewer(qt.QMainWindow):
         self.__dataPanel = DataPanel(self, self.__context)
 
         self._tabCount = 1
-        spliter = qt.QSplitter(self)
+        splitter = qt.QSplitter(self)
         self._tabs = qt.QTabWidget()
-        self._tabs.setTabsClosable(True)  # TODO only closeable if tabs >= 2
-        self._tabs.tabCloseRequested.connect(self.closeTab)
+        self._tabs.tabCloseRequested.connect(self._closeTab)
         dockWidget = qt.QDockWidget()
         dockWidget.setWidget(self.__dataPanel)
-        widget = qt.QMainWindow()
+        dockWidget.setFeatures(qt.QDockWidget.DockWidgetFloatable | qt.QDockWidget.DockWidgetMovable)
+        widget = MainWithDocks()
         widget.addDockWidget(qt.Qt.RightDockWidgetArea, dockWidget)
         self._tabs.addTab(widget, "Tab " + str(self._tabCount))  # TODO use more expressive tab title
         self._tabCount += 1
-        spliter.addWidget(rightPanel)
-        spliter.addWidget(self._tabs)
-        spliter.setStretchFactor(1, 1)
-        self.__splitter = spliter
+        splitter.addWidget(rightPanel)
+        splitter.addWidget(self._tabs)
+        splitter.setStretchFactor(1, 1)
+        self.__splitter = splitter
 
         main_panel = qt.QWidget(self)
         layout = qt.QVBoxLayout()
-        layout.addWidget(spliter)
-        layout.setStretchFactor(spliter, 1)
+        layout.addWidget(splitter)
+        layout.setStretchFactor(splitter, 1)
         main_panel.setLayout(layout)
 
         self.setCentralWidget(main_panel)
@@ -819,6 +819,7 @@ class Viewer(qt.QMainWindow):
             # Update the viewer for a single selection
             data = selected[0]
             self.__dataPanel.setData(data)
+            self._tabs.setTabText(0, data.name)
         else:
             _logger.debug("Too many data selected")
 
@@ -860,20 +861,28 @@ class Viewer(qt.QMainWindow):
         model.createFromNxdata(h5nxdata)
 
     def _displayInNewTab(self, data):
-        dock_widget = qt.QDockWidget("Tab " + str(self._tabCount), self)
+        dockWidget = qt.QDockWidget()
         widget = DataPanel(self, self.__context)
         widget.setData(data)
-        dock_widget.setWidget(widget)
-        window = qt.QMainWindow()
-        window.addDockWidget(qt.Qt.RightDockWidgetArea, dock_widget)
-        self._tabs.addTab(window, "Tab " + str(self._tabCount))  # TODO use more expressive title
+        dockWidget.setWidget(widget)
+        dockWidget.setFeatures(qt.QDockWidget.DockWidgetFloatable | qt.QDockWidget.DockWidgetMovable)
+        window = MainWithDocks()
+        window.addDockWidget(qt.Qt.RightDockWidgetArea, dockWidget)
+        self._tabs.addTab(window, data.name)
         self._tabCount += 1
+        if self._tabCount >= 2:
+            self._tabs.setTabsClosable(True)
 
-    def closeTab(self, currentIndex):
+    def _closeTab(self, currentIndex):
+        self._tabCount -= 1
+        if (self._tabCount - 1) < 2:
+            self._tabs.setTabsClosable(False)
+        if currentIndex == 0:
+            self.__dataPanel = self._tabs.widget(1).dockedWidget.widget()
         currentWidget = self._tabs.widget(currentIndex)
         currentWidget.deleteLater()
         self._tabs.removeTab(currentIndex)
-        self._tabCount -= 1
+
 
     def customContextMenu(self, event):
         """Called to populate the context menu
@@ -920,3 +929,14 @@ class Viewer(qt.QMainWindow):
                 action = qt.QAction("Synchronize %s" % obj.local_filename, event.source())
                 action.triggered.connect(lambda: self.__synchronizeH5pyObject(h5))
                 menu.addAction(action)
+
+
+class MainWithDocks(qt.QMainWindow):
+    def __init__(self, parent=None):
+        super(MainWithDocks, self).__init__(parent)
+
+        self.dockedWidget = None
+
+    def addDockWidget(self, area, dockWidget, orientation=None):
+        self.dockedWidget = dockWidget
+        super().addDockWidget(area, dockWidget)
