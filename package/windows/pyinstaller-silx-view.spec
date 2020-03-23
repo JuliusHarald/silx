@@ -10,8 +10,8 @@ datas.append((os.path.join(PROJECT_PATH, "LICENSE"), "."))
 datas.append((os.path.join(PROJECT_PATH, "copyright"), "."))
 datas += collect_data_files("silx.resources")
 
-hiddenimports = collect_submodules('fabio')
 
+hiddenimports = collect_submodules('fabio')
 
 
 block_cipher = None
@@ -21,7 +21,7 @@ a = Analysis(['bootstrap-silx-view.py'],
              pathex=[],
              binaries=[],
              datas=datas,
-             hiddenimports=[],
+             hiddenimports=hiddenimports,
              hookspath=[],
              runtime_hooks=[],
              excludes=[],

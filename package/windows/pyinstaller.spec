@@ -14,7 +14,6 @@ datas += collect_data_files("silx.resources")
 hiddenimports = collect_submodules('fabio')
 
 
-
 block_cipher = None
 
 
@@ -22,7 +21,7 @@ a = Analysis(['bootstrap.py'],
              pathex=[],
              binaries=[],
              datas=datas,
-             hiddenimports=[],
+             hiddenimports=hiddenimports,
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
