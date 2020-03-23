@@ -8,9 +8,11 @@ PROJECT_PATH = os.path.abspath(os.path.join(SPECPATH, "..", ".."))
 datas.append((os.path.join(PROJECT_PATH, "README.rst"), "."))
 datas.append((os.path.join(PROJECT_PATH, "LICENSE"), "."))
 datas.append((os.path.join(PROJECT_PATH, "copyright"), "."))
-
-
 datas += collect_data_files("silx.resources")
+
+
+hiddenimports = collect_submodules('fabio')
+
 
 
 block_cipher = None
