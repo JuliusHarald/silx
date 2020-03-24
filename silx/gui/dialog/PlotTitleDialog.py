@@ -26,7 +26,6 @@
 .. autoclass:: PlotTitleDialog
    :members: getCustomTitleTextArea, getFontSize, setHdf5data
 """
-from qtconsole.qt import QtGui
 
 from silx.gui import qt
 
@@ -39,7 +38,8 @@ class PlotTitleDialog(qt.QDialog):
     def __init__(self, hdf5data, parent=None):
         qt.QDialog.__init__(self, parent)
         self.setWindowTitle("Set Plot Title")
-        self.setWindowIcon(QtGui.QIcon('silx/resources/gui/icons/silx.png'))
+        app = qt.QApplication.instance()
+        self.setWindowIcon(app.windowIcon())
 
         self._hdf5data = hdf5data
         fontSizes = ["8", "10", "12", "14", "16", "32"]
