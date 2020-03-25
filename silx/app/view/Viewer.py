@@ -875,6 +875,13 @@ class Viewer(qt.QMainWindow):
             menu.addSeparator()
 
         for obj in selectedObjects:
+            selectedObjectsCount = sum(1 for _ in selectedObjects) + 1
+            if selectedObjectsCount > 1:
+                action = qt.QAction("Open in one plot", event.source())
+                action.triggered.connect(lambda: print("LOL")) # TODO make mehtod displayMultipleData; customize Datapanel
+                menu.addAction(action)
+                return
+
             h5 = obj.h5py_object
 
             name = obj.name

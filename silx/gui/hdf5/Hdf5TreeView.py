@@ -80,6 +80,7 @@ class Hdf5TreeView(qt.QTreeView):
         self.setDragEnabled(True)
         self.setDragDropMode(qt.QAbstractItemView.DragDrop)
         self.showDropIndicator()
+        self.setSelectionMode(self.ExtendedSelection)
 
         self.__context_menu_callbacks = silxweakref.WeakList()
         self.setContextMenuPolicy(qt.Qt.CustomContextMenu)
