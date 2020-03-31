@@ -27,11 +27,11 @@ __authors__ = ["V. Valls"]
 __license__ = "MIT"
 __date__ = "15/01/2019"
 
-
 import os
 import collections
 import logging
 import functools
+import numpy
 
 import silx.io.nxdata
 from silx.gui import qt
@@ -43,7 +43,6 @@ from .CustomNxdataWidget import CustomNxDataToolBar
 from . import utils
 from silx.gui.utils import projecturl
 from .DataPanel import DataPanel
-
 
 _logger = logging.getLogger(__name__)
 
@@ -868,19 +867,26 @@ class Viewer(qt.QMainWindow):
         :param silx.gui.hdf5.Hdf5ContextMenuEvent event: Event
             containing expected information to populate the context menu
         """
-        selectedObjects = event.source().selectedH5Nodes(ignoreBrokenLinks=False)
         menu = event.menu()
 
         if not menu.isEmpty():
             menu.addSeparator()
 
+        selectedObjects = []
+        for obj in event.source().selectedH5Nodes(ignoreBrokenLinks=False):
+            selectedObjects.append(obj)
+
+        if len(selectedObjects) > 1:
+            for obj in selectedObjects:
+                h5 = obj.h5py_object
+                if self.isNotSuitableForMultiplePlot(h5):
+                    return
+            action = qt.QAction("Open in one plot", event.source())
+            action.triggered.connect(lambda: self.displayData(selectedObjects))
+            menu.addAction(action)
+            return
+
         for obj in selectedObjects:
-            selectedObjectsCount = sum(1 for _ in selectedObjects) + 1
-            if selectedObjectsCount > 1:
-                action = qt.QAction("Open in one plot", event.source())
-                action.triggered.connect(lambda: print("LOL")) # TODO make mehtod displayMultipleData; customize Datapanel
-                menu.addAction(action)
-                return
 
             h5 = obj.h5py_object
 
@@ -911,3 +917,12 @@ class Viewer(qt.QMainWindow):
                 action = qt.QAction("Synchronize %s" % obj.local_filename, event.source())
                 action.triggered.connect(lambda: self.__synchronizeH5pyObject(h5))
                 menu.addAction(action)
+
+    def isNotSuitableForMultiplePlot(self, data):
+        countNumericColumns = 0
+        if hasattr(data, "dtype"):
+            if data.dtype.fields is not None:
+                for field in data.dtype.fields:
+                    if numpy.issubdtype(data.dtype[field], numpy.number):
+                        countNumericColumns += 1
+        return countNumericColumns < 1 or silx.io.is_group(data) or silx.io.is_file(data)
