@@ -859,7 +859,7 @@ class Viewer(qt.QMainWindow):
     def _displayInNewTab(self, data):
         dockWidget = qt.QDockWidget()
         widget = DataPanel(self, self.__context)
-        widget.setData(data)
+        widget.setData(data, oneyaxis=True)
         dockWidget.setWidget(widget)
         dockWidget.setFeatures(qt.QDockWidget.DockWidgetFloatable | qt.QDockWidget.DockWidgetMovable)
         window = MainWithDocks()
@@ -942,7 +942,6 @@ class Viewer(qt.QMainWindow):
                 action.triggered.connect(lambda: self.__synchronizeH5pyObject(h5))
                 menu.addAction(action)
 
-                
     def isNotSuitableForMultiplePlot(self, data):
         countNumericColumns = 0
         if hasattr(data, "dtype"):

@@ -872,7 +872,7 @@ class _MultiCurvePlotView(DataView):
     def axesNames(self, data, info):  # TODO I don't need that for this class, do I?
         return ["y"]
 
-    def setData(self, data, oneyaxis=None):
+    def setData(self, data, oneyaxis=None, hdf5data=None):
         normalizedData = []
         for dataset in data:
             normalizedData.append(self.normalizeData(dataset))

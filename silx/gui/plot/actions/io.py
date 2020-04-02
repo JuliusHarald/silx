@@ -661,10 +661,11 @@ class PlotTitleAction(PlotAction):
         self._dialog = None
 
     def setTitle(self):
-        if not self._dialog.exec_():
-            return False
-        self.plot.setGraphTitle(self._dialog.getCustomTitleTextArea().toPlainText(),
-                                fontdict={'size': self._dialog.getFontSize(), })
+        if self._dialog is not None:
+            if not self._dialog.exec_():
+                return False
+            self.plot.setGraphTitle(self._dialog.getCustomTitleTextArea().toPlainText(),
+                                    fontdict={'size': self._dialog.getFontSize(), })
 
     def setDialog(self, data):
         self._dialog = PlotTitleDialog(data)

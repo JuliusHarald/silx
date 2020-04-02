@@ -248,7 +248,7 @@ class DataViewer(qt.QFrame):
         qt.QTimer.singleShot(10, self.__setDataInView)
 
     def __setDataInView(self):
-        self.__currentView.setData(self.__displayedData, self.__data, oneyaxis=self._oneyaxis)
+        self.__currentView.setData(self.__displayedData, oneyaxis=self._oneyaxis, hdf5data=self.__data)
 
     def setDisplayedView(self, view):
         """Set the displayed view.
