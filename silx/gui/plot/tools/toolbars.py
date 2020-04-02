@@ -1,7 +1,7 @@
 # coding: utf-8
 # /*##########################################################################
 #
-# Copyright (c) 2018-2020 European Synchrotron Radiation Facility
+# Copyright (c) 2018-2019 European Synchrotron Radiation Facility
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,6 @@ from ....utils.deprecation import deprecated
 
 class InteractiveModeToolBar(qt.QToolBar):
     """Toolbar with interactive mode actions
-
     :param parent: See :class:`QWidget`
     :param silx.gui.plot.PlotWidget plot: PlotWidget to control
     :param str title: Title of the toolbar.
@@ -60,14 +59,12 @@ class InteractiveModeToolBar(qt.QToolBar):
 
     def getZoomModeAction(self):
         """Returns the zoom mode QAction.
-
         :rtype: PlotAction
         """
         return self._zoomModeAction
 
     def getPanModeAction(self):
         """Returns the pan mode QAction
-
         :rtype: PlotAction
         """
         return self._panModeAction
@@ -75,7 +72,6 @@ class InteractiveModeToolBar(qt.QToolBar):
 
 class OutputToolBar(qt.QToolBar):
     """Toolbar providing icons to copy, save and print a PlotWidget
-
     :param parent: See :class:`QWidget`
     :param silx.gui.plot.PlotWidget plot: PlotWidget to control
     :param str title: Title of the toolbar.
@@ -95,31 +91,36 @@ class OutputToolBar(qt.QToolBar):
         self._printAction = actions.io.PrintAction(parent=self, plot=plot)
         self.addAction(self._printAction)
 
+        self._plotTitleAction = actions.io.PlotTitleAction(parent=self, plot=plot)
+        self.addAction(self._plotTitleAction)
+
     def getCopyAction(self):
         """Returns the QAction performing copy to clipboard of the PlotWidget
-
         :rtype: PlotAction
         """
         return self._copyAction
 
     def getSaveAction(self):
         """Returns the QAction performing save to file of the PlotWidget
-
         :rtype: PlotAction
         """
         return self._saveAction
 
     def getPrintAction(self):
         """Returns the QAction performing printing of the PlotWidget
-
         :rtype: PlotAction
         """
         return self._printAction
 
+    def getPlotTitleAction(self):
+        """Returns the QAction performing setting a title for the plot
+        :rtype: PlotAction
+        """
+        return self._plotTitleAction
+
 
 class ImageToolBar(qt.QToolBar):
     """Toolbar providing PlotAction suited when displaying images
-
     :param parent: See :class:`QWidget`
     :param silx.gui.plot.PlotWidget plot: PlotWidget to control
     :param str title: Title of the toolbar.
@@ -148,28 +149,24 @@ class ImageToolBar(qt.QToolBar):
 
     def getResetZoomAction(self):
         """Returns the QAction to reset the zoom.
-
         :rtype: PlotAction
         """
         return self._resetZoomAction
 
     def getColormapAction(self):
         """Returns the QAction to control the colormap.
-
         :rtype: PlotAction
         """
         return self._colormapAction
 
     def getKeepDataAspectRatioButton(self):
         """Returns the QToolButton controlling data aspect ratio.
-
         :rtype: QToolButton
         """
         return self._keepDataAspectRatioButton
 
     def getYAxisInvertedButton(self):
         """Returns the QToolButton controlling Y axis orientation.
-
         :rtype: QToolButton
         """
         return self._yAxisInvertedButton
@@ -177,7 +174,6 @@ class ImageToolBar(qt.QToolBar):
 
 class CurveToolBar(qt.QToolBar):
     """Toolbar providing PlotAction suited when displaying curves
-
     :param parent: See :class:`QWidget`
     :param silx.gui.plot.PlotWidget plot: PlotWidget to control
     :param str title: Title of the toolbar.
@@ -218,49 +214,42 @@ class CurveToolBar(qt.QToolBar):
 
     def getResetZoomAction(self):
         """Returns the QAction to reset the zoom.
-
         :rtype: PlotAction
         """
         return self._resetZoomAction
 
     def getXAxisAutoScaleAction(self):
         """Returns the QAction to toggle X axis autoscale.
-
         :rtype: PlotAction
         """
         return self._xAxisAutoScaleAction
 
     def getYAxisAutoScaleAction(self):
         """Returns the QAction to toggle Y axis autoscale.
-
         :rtype: PlotAction
         """
         return self._yAxisAutoScaleAction
 
     def getXAxisLogarithmicAction(self):
         """Returns the QAction to toggle X axis log/linear scale.
-
         :rtype: PlotAction
         """
         return self._xAxisLogarithmicAction
 
     def getYAxisLogarithmicAction(self):
         """Returns the QAction to toggle Y axis log/linear scale.
-
         :rtype: PlotAction
         """
         return self._yAxisLogarithmicAction
 
     def getGridAction(self):
         """Returns the action to toggle the plot grid.
-
         :rtype: PlotAction
         """
         return self._gridAction
 
     def getCurveStyleAction(self):
         """Returns the QAction to change the style of all curves.
-
         :rtype: PlotAction
         """
         return self._curveStyleAction
@@ -268,7 +257,6 @@ class CurveToolBar(qt.QToolBar):
 
 class ScatterToolBar(qt.QToolBar):
     """Toolbar providing PlotAction suited when displaying scatter plot
-
     :param parent: See :class:`QWidget`
     :param silx.gui.plot.PlotWidget plot: PlotWidget to control
     :param str title: Title of the toolbar.
@@ -309,49 +297,42 @@ class ScatterToolBar(qt.QToolBar):
 
     def getResetZoomAction(self):
         """Returns the QAction to reset the zoom.
-
         :rtype: PlotAction
         """
         return self._resetZoomAction
 
     def getXAxisLogarithmicAction(self):
         """Returns the QAction to toggle X axis log/linear scale.
-
         :rtype: PlotAction
         """
         return self._xAxisLogarithmicAction
 
     def getYAxisLogarithmicAction(self):
         """Returns the QAction to toggle Y axis log/linear scale.
-
         :rtype: PlotAction
         """
         return self._yAxisLogarithmicAction
 
     def getGridAction(self):
         """Returns the action to toggle the plot grid.
-
         :rtype: PlotAction
         """
         return self._gridAction
 
     def getColormapAction(self):
         """Returns the QAction to control the colormap.
-
         :rtype: PlotAction
         """
         return self._colormapAction
 
     def getKeepDataAspectRatioButton(self):
         """Returns the QToolButton controlling data aspect ratio.
-
         :rtype: QToolButton
         """
         return self._keepDataAspectRatioButton
 
     def getScatterVisualizationToolButton(self):
         """Returns the QToolButton controlling the visualization mode.
-
         :rtype: ScatterVisualizationToolButton
         """
         return self._visualizationToolButton

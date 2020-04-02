@@ -1,6 +1,6 @@
 # coding: utf-8
 # /*##########################################################################
-# Copyright (C) 2016-2020 European Synchrotron Radiation Facility
+# Copyright (C) 2016-2019 European Synchrotron Radiation Facility
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -111,16 +111,26 @@ class Viewer(qt.QMainWindow):
 
         self.__dataPanel = DataPanel(self, self.__context)
 
-        spliter = qt.QSplitter(self)
-        spliter.addWidget(rightPanel)
-        spliter.addWidget(self.__dataPanel)
-        spliter.setStretchFactor(1, 1)
-        self.__splitter = spliter
+        self._tabCount = 1
+        splitter = qt.QSplitter(self)
+        self._tabs = qt.QTabWidget()
+        self._tabs.tabCloseRequested.connect(self._closeTab)
+        dockWidget = qt.QDockWidget()
+        dockWidget.setWidget(self.__dataPanel)
+        dockWidget.setFeatures(qt.QDockWidget.DockWidgetFloatable | qt.QDockWidget.DockWidgetMovable)
+        widget = MainWithDocks()
+        widget.addDockWidget(qt.Qt.RightDockWidgetArea, dockWidget)
+        self._tabs.addTab(widget, "Tab " + str(self._tabCount))  # TODO use more expressive tab title
+        self._tabCount += 1
+        splitter.addWidget(rightPanel)
+        splitter.addWidget(self._tabs)
+        splitter.setStretchFactor(1, 1)
+        self.__splitter = splitter
 
         main_panel = qt.QWidget(self)
         layout = qt.QVBoxLayout()
-        layout.addWidget(spliter)
-        layout.setStretchFactor(spliter, 1)
+        layout.addWidget(splitter)
+        layout.setStretchFactor(splitter, 1)
         main_panel.setLayout(layout)
 
         self.setCentralWidget(main_panel)
@@ -300,7 +310,6 @@ class Viewer(qt.QMainWindow):
 
     def __getRelativePath(self, model, rootIndex, index):
         """Returns a relative path from an index to his rootIndex.
-
         If the path is empty the index is also the rootIndex.
         """
         path = ""
@@ -368,7 +377,6 @@ class Viewer(qt.QMainWindow):
 
     def __expandAllSelected(self):
         """Expand all selected items of the tree.
-
         The depth is fixed to avoid infinite loop with recurssive links.
         """
         qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
@@ -398,7 +406,6 @@ class Viewer(qt.QMainWindow):
 
     def __collapseAllSelected(self):
         """Collapse all selected items of the tree.
-
         The depth is fixed to avoid infinite loop with recurssive links.
         """
         selection = self.__treeview.selectionModel()
@@ -465,7 +472,6 @@ class Viewer(qt.QMainWindow):
 
     def saveSettings(self, settings):
         """Save the window settings to this settings object
-
         :param qt.QSettings settings: Initialized settings
         """
         isFullScreen = bool(self.windowState() & qt.Qt.WindowFullScreen)
@@ -491,7 +497,6 @@ class Viewer(qt.QMainWindow):
 
     def restoreSettings(self, settings):
         """Restore the window settings using this settings object
-
         :param qt.QSettings settings: Initialized settings
         """
         settings.beginGroup("mainwindow")
@@ -552,11 +557,6 @@ class Viewer(qt.QMainWindow):
         action.setStatusTip("Open a recently openned file")
         action.triggered.connect(self.open)
         self._openRecentAction = action
-
-        action = qt.QAction("Close All", self)
-        action.setStatusTip("Close all opened files")
-        action.triggered.connect(self.closeAll)
-        self._closeAllAction = action
 
         action = qt.QAction("&About", self)
         action.setStatusTip("Show the application's About box")
@@ -714,7 +714,6 @@ class Viewer(qt.QMainWindow):
         fileMenu = self.menuBar().addMenu("&File")
         fileMenu.addAction(self._openAction)
         fileMenu.addAction(self._openRecentAction)
-        fileMenu.addAction(self._closeAllAction)
         fileMenu.addSeparator()
         fileMenu.addAction(self._exitAction)
         fileMenu.aboutToShow.connect(self.__updateFileMenu)
@@ -748,11 +747,6 @@ class Viewer(qt.QMainWindow):
         filenames = dialog.selectedFiles()
         for filename in filenames:
             self.appendFile(filename)
-
-    def closeAll(self):
-        """Close all currently opened files"""
-        model = self.__treeview.findHdf5TreeModel()
-        model.clear()
 
     def createFileDialog(self):
         dialog = qt.QFileDialog(self)
@@ -821,6 +815,7 @@ class Viewer(qt.QMainWindow):
             # Update the viewer for a single selection
             data = selected[0]
             self.__dataPanel.setData(data, oneyaxis)
+            self._tabs.setTabText(0, data.name)
         else:
             _logger.debug("Too many data selected")
 
@@ -861,9 +856,32 @@ class Viewer(qt.QMainWindow):
         model = self.__customNxdata.model()
         model.createFromNxdata(h5nxdata)
 
+    def _displayInNewTab(self, data):
+        dockWidget = qt.QDockWidget()
+        widget = DataPanel(self, self.__context)
+        widget.setData(data)
+        dockWidget.setWidget(widget)
+        dockWidget.setFeatures(qt.QDockWidget.DockWidgetFloatable | qt.QDockWidget.DockWidgetMovable)
+        window = MainWithDocks()
+        window.addDockWidget(qt.Qt.RightDockWidgetArea, dockWidget)
+        self._tabs.addTab(window, data.name)
+        self._tabCount += 1
+        if self._tabCount >= 2:
+            self._tabs.setTabsClosable(True)
+
+    def _closeTab(self, currentIndex):
+        self._tabCount -= 1
+        if (self._tabCount - 1) < 2:
+            self._tabs.setTabsClosable(False)
+        if currentIndex == 0:
+            self.__dataPanel = self._tabs.widget(1).dockedWidget.widget()
+        currentWidget = self._tabs.widget(currentIndex)
+        currentWidget.deleteLater()
+        self._tabs.removeTab(currentIndex)
+
+
     def customContextMenu(self, event):
         """Called to populate the context menu
-
         :param silx.gui.hdf5.Hdf5ContextMenuEvent event: Event
             containing expected information to populate the context menu
         """
@@ -907,6 +925,9 @@ class Viewer(qt.QMainWindow):
                 action = qt.QAction("Use as a new custom signal", event.source())
                 action.triggered.connect(lambda: self.useAsNewCustomSignal(h5))
                 menu.addAction(action)
+                action = qt.QAction("Open in new Tab", event.source())
+                action.triggered.connect(lambda: self._displayInNewTab(h5))
+                menu.addAction(action)
 
             if silx.io.is_group(h5) and silx.io.nxdata.is_valid_nxdata(h5):
                 action = qt.QAction("Use as a new custom NXdata", event.source())
@@ -921,6 +942,7 @@ class Viewer(qt.QMainWindow):
                 action.triggered.connect(lambda: self.__synchronizeH5pyObject(h5))
                 menu.addAction(action)
 
+                
     def isNotSuitableForMultiplePlot(self, data):
         countNumericColumns = 0
         if hasattr(data, "dtype"):
@@ -929,3 +951,15 @@ class Viewer(qt.QMainWindow):
                     if numpy.issubdtype(data.dtype[field], numpy.number):
                         countNumericColumns += 1
         return countNumericColumns < 1 or silx.io.is_group(data) or silx.io.is_file(data)
+
+
+class MainWithDocks(qt.QMainWindow):
+    def __init__(self, parent=None):
+        super(MainWithDocks, self).__init__(parent)
+
+        self.dockedWidget = None
+
+    def addDockWidget(self, area, dockWidget, orientation=None):
+        self.dockedWidget = dockWidget
+        super().addDockWidget(area, dockWidget)
+

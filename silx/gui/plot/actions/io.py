@@ -25,9 +25,7 @@
 """
 :mod:`silx.gui.plot.actions.io` provides a set of QAction relative of inputs
 and outputs for a :class:`.PlotWidget`.
-
 The following QAction are available:
-
 - :class:`CopyAction`
 - :class:`PrintAction`
 - :class:`SaveAction`
@@ -51,13 +49,16 @@ import numpy
 from silx.utils.deprecation import deprecated
 from silx.gui import qt, printer
 from silx.gui.dialog.GroupDialog import GroupDialog
+from silx.gui.dialog.PlotTitleDialog import PlotTitleDialog
 from silx.third_party.EdfFile import EdfFile
 from silx.third_party.TiffIO import TiffIO
 from ...utils.image import convertArrayToQImage
+
 if sys.version_info[0] == 3:
     from io import BytesIO
 else:
     import cStringIO as _StringIO
+
     BytesIO = _StringIO.StringIO
 
 _logger = logging.getLogger(__name__)
@@ -68,7 +69,6 @@ _NEXUS_HDF5_EXT_STR = ' '.join(['*' + ext for ext in NEXUS_HDF5_EXT])
 def selectOutputGroup(h5filename):
     """Open a dialog to prompt the user to select a group in
     which to output data.
-
     :param str h5filename: name of an existing HDF5 file
     :rtype: str
     :return: Name of output group, or None if the dialog was cancelled
@@ -83,9 +83,7 @@ def selectOutputGroup(h5filename):
 
 class SaveAction(PlotAction):
     """QAction for saving Plot content.
-
     It opens a Save as... dialog.
-
     :param plot: :class:`.PlotWidget` instance on which to operate.
     :param parent: See :class:`QAction`.
     """
@@ -200,7 +198,6 @@ class SaveAction(PlotAction):
 
     def _saveSnapshot(self, plot, filename, nameFilter):
         """Save a snapshot of the :class:`PlotWindow` widget.
-
         :param str filename: The name of the file to write
         :param str nameFilter: The selected name filter
         :return: False if format is not supported or save failed,
@@ -262,7 +259,6 @@ class SaveAction(PlotAction):
 
     def _saveCurve(self, plot, filename, nameFilter):
         """Save a curve from the plot.
-
         :param str filename: The name of the file to write
         :param str nameFilter: The selected name filter
         :return: False if format is not supported or save failed,
@@ -311,7 +307,6 @@ class SaveAction(PlotAction):
 
     def _saveCurves(self, plot, filename, nameFilter):
         """Save all curves from the plot.
-
         :param str filename: The name of the file to write
         :param str nameFilter: The selected name filter
         :return: False if format is not supported or save failed,
@@ -364,7 +359,6 @@ class SaveAction(PlotAction):
 
     def _saveImage(self, plot, filename, nameFilter):
         """Save an image from the plot.
-
         :param str filename: The name of the file to write
         :param str nameFilter: The selected name filter
         :return: False if format is not supported or save failed,
@@ -430,7 +424,7 @@ class SaveAction(PlotAction):
                 self.IMAGE_FILTER_CSV_COMMA: (',', 'csv'),
                 self.IMAGE_FILTER_CSV_SEMICOLON: (';', 'csv'),
                 self.IMAGE_FILTER_CSV_TAB: ('\t', 'csv'),
-                }[nameFilter]
+            }[nameFilter]
 
             height, width = data.shape
             rows, cols = numpy.mgrid[0:height, 0:width]
@@ -466,7 +460,6 @@ class SaveAction(PlotAction):
 
     def _saveScatter(self, plot, filename, nameFilter):
         """Save an image from the plot.
-
         :param str filename: The name of the file to write
         :param str nameFilter: The selected name filter
         :return: False if format is not supported or save failed,
@@ -509,7 +502,6 @@ class SaveAction(PlotAction):
 
     def setFileFilter(self, dataKind, nameFilter, func, index=None, appendToFile=False):
         """Set a name filter to add/replace a file format support
-
         :param str dataKind:
             The kind of data for which the provided filter is valid.
             One of: 'all', 'curve', 'curves', 'image', 'scatter'
@@ -564,7 +556,6 @@ class SaveAction(PlotAction):
 
     def getFileFilters(self, dataKind):
         """Returns the nameFilter and associated function for a kind of data.
-
         :param str dataKind:
             The kind of data for which the provided filter is valid.
             On of: 'all', 'curve', 'curves', 'image', 'scatter'
@@ -629,7 +620,7 @@ class SaveAction(PlotAction):
             # Check for correct file extension
             # Extract file extensions as .something
             extensions = [ext[ext.find('.'):] for ext in
-                          nameFilter[nameFilter.find('(')+1:-1].split()]
+                          nameFilter[nameFilter.find('(') + 1:-1].split()]
             for ext in extensions:
                 if (len(filename) > len(ext) and
                         filename[-len(ext):].lower() == ext.lower()):
@@ -649,7 +640,6 @@ class SaveAction(PlotAction):
 
 def _plotAsPNG(plot):
     """Save a :class:`Plot` as PNG and return the payload.
-
     :param plot: The :class:`Plot` to save
     """
     pngFile = BytesIO()
@@ -661,14 +651,30 @@ def _plotAsPNG(plot):
     return data
 
 
+class PlotTitleAction(PlotAction):
+    def __init__(self, plot, parent=None):
+        super(PlotTitleAction, self).__init__(
+            plot, icon='colormap-none', text='Set...',  # TODO change icon
+            tooltip='Set the plot title',
+            triggered=self.setTitle,
+            checkable=False, parent=parent)
+        self._dialog = None
+
+    def setTitle(self):
+        if not self._dialog.exec_():
+            return False
+        self.plot.setGraphTitle(self._dialog.getCustomTitleTextArea().toPlainText(),
+                                fontdict={'size': self._dialog.getFontSize(), })
+
+    def setDialog(self, data):
+        self._dialog = PlotTitleDialog(data)
+
+
 class PrintAction(PlotAction):
     """QAction for printing the plot.
-
     It opens a Print dialog.
-
     Current implementation print a bitmap of the plot area and not vector
     graphics, so printing quality is not great.
-
     :param plot: :class:`.PlotWidget` instance on which to operate.
     :param parent: See :class:`QAction`.
     """
@@ -684,7 +690,6 @@ class PrintAction(PlotAction):
 
     def getPrinter(self):
         """The QPrinter instance used by the PrintAction.
-
         :rtype: QPrinter
         """
         return printer.getDefaultPrinter()
@@ -696,9 +701,7 @@ class PrintAction(PlotAction):
 
     def printPlotAsWidget(self):
         """Open the print dialog and print the plot.
-
         Use :meth:`QWidget.render` to print the plot
-
         :return: True if successful
         """
         dialog = qt.QPrintDialog(self.getPrinter(), self.plot)
@@ -728,9 +731,7 @@ class PrintAction(PlotAction):
 
     def printPlot(self):
         """Open the print dialog and print the plot.
-
         Use :meth:`Plot.saveGraph` to print the plot.
-
         :return: True if successful
         """
         # Init printer and start printer dialog
@@ -765,7 +766,6 @@ class PrintAction(PlotAction):
 
 class CopyAction(PlotAction):
     """QAction to copy :class:`.PlotWidget` content to clipboard.
-
     :param plot: :class:`.PlotWidget` instance on which to operate
     :param parent: See :class:`QAction`
     """
