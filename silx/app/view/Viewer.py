@@ -31,6 +31,7 @@ import os
 import collections
 import logging
 import functools
+import numpy
 
 import silx.io.nxdata
 from silx.gui import qt
@@ -806,22 +807,22 @@ class Viewer(qt.QMainWindow):
             self.__displayIt = filename
         self.__treeview.findHdf5TreeModel().appendFile(filename)
 
-    def displaySelectedData(self):
+    def displaySelectedData(self, oneyaxis=True):
         """Called to update the dataviewer with the selected data.
         """
         selected = list(self.__treeview.selectedH5Nodes(ignoreBrokenLinks=False))
         if len(selected) == 1:
             # Update the viewer for a single selection
             data = selected[0]
-            self.__dataPanel.setData(data)
+            self.__dataPanel.setData(data, oneyaxis)
             self._tabs.setTabText(0, data.name)
         else:
             _logger.debug("Too many data selected")
 
-    def displayData(self, data):
+    def displayData(self, data, oneyaxis=True):
         """Called to update the dataviewer with a secific data.
         """
-        self.__dataPanel.setData(data)
+        self.__dataPanel.setData(data, oneyaxis)
 
     def displaySelectedCustomData(self):
         selected = list(self.__customNxdata.selectedItems())
@@ -884,13 +885,30 @@ class Viewer(qt.QMainWindow):
         :param silx.gui.hdf5.Hdf5ContextMenuEvent event: Event
             containing expected information to populate the context menu
         """
-        selectedObjects = event.source().selectedH5Nodes(ignoreBrokenLinks=False)
         menu = event.menu()
 
         if not menu.isEmpty():
             menu.addSeparator()
 
+        selectedObjects = []
+        for obj in event.source().selectedH5Nodes(ignoreBrokenLinks=False):
+            selectedObjects.append(obj)
+
+        if len(selectedObjects) > 1:
+            for obj in selectedObjects:
+                h5 = obj.h5py_object
+                if self.isNotSuitableForMultiplePlot(h5):
+                    return
+            action = qt.QAction("Open with one y axes", event.source())
+            action.triggered.connect(lambda: self.displayData(selectedObjects, oneyaxis=True))
+            menu.addAction(action)
+            action = qt.QAction("Open multiple y axis", event.source())
+            action.triggered.connect(lambda: self.displayData(selectedObjects, oneyaxis=False))
+            menu.addAction(action)
+            return
+
         for obj in selectedObjects:
+
             h5 = obj.h5py_object
 
             name = obj.name
@@ -924,6 +942,16 @@ class Viewer(qt.QMainWindow):
                 action.triggered.connect(lambda: self.__synchronizeH5pyObject(h5))
                 menu.addAction(action)
 
+                
+    def isNotSuitableForMultiplePlot(self, data):
+        countNumericColumns = 0
+        if hasattr(data, "dtype"):
+            if data.dtype.fields is not None:
+                for field in data.dtype.fields:
+                    if numpy.issubdtype(data.dtype[field], numpy.number):
+                        countNumericColumns += 1
+        return countNumericColumns < 1 or silx.io.is_group(data) or silx.io.is_file(data)
+
 
 class MainWithDocks(qt.QMainWindow):
     def __init__(self, parent=None):
@@ -934,3 +962,4 @@ class MainWithDocks(qt.QMainWindow):
     def addDockWidget(self, area, dockWidget, orientation=None):
         self.dockedWidget = dockWidget
         super().addDockWidget(area, dockWidget)
+

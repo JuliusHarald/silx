@@ -30,16 +30,13 @@ __authors__ = ["V.A. Sole", "T. Vincent, H. Payno"]
 __license__ = "MIT"
 __date__ = "21/12/2018"
 
-
 import logging
 import datetime as dt
 import numpy
 
 from pkg_resources import parse_version as _parse_version
 
-
 _logger = logging.getLogger(__name__)
-
 
 from ... import qt
 
@@ -92,6 +89,7 @@ def normalize_linestyle(linestyle):
     """Normalize known old-style linestyle, else return the provided value."""
     return _PATCH_LINESTYLE.get(linestyle, linestyle)
 
+
 def get_path_from_symbol(symbol):
     """Get the path representation of a symbol, else None if
     it is not provided.
@@ -104,16 +102,16 @@ def get_path_from_symbol(symbol):
         if path is not None:
             return path
         vertices = numpy.array([
-            [0,-99],
-            [31,-73], [47,-55], [55,-46],
-            [63,-37], [94,-2], [94,33],
-            [94,69], [71,89], [47,89],
-            [24,89], [8,74], [0,58],
-            [-8,74], [-24,89], [-47,89],
-            [-71,89], [-94,69], [-94,33],
-            [-94,-2], [-63,-37], [-55,-46],
-            [-47,-55], [-31,-73], [0,-99],
-            [0,-99]])
+            [0, -99],
+            [31, -73], [47, -55], [55, -46],
+            [63, -37], [94, -2], [94, 33],
+            [94, 69], [71, 89], [47, 89],
+            [24, 89], [8, 74], [0, 58],
+            [-8, 74], [-24, 89], [-47, 89],
+            [-71, 89], [-94, 69], [-94, 33],
+            [-94, -2], [-63, -37], [-55, -46],
+            [-47, -55], [-31, -73], [0, -99],
+            [0, -99]])
         codes = [mpath.Path.CURVE4] * len(vertices)
         codes[0] = mpath.Path.MOVETO
         codes[-1] = mpath.Path.CLOSEPOLY
@@ -121,6 +119,7 @@ def get_path_from_symbol(symbol):
         _MARKER_PATHS[symbol] = path
         return path
     return None
+
 
 class NiceDateLocator(Locator):
     """
@@ -130,6 +129,7 @@ class NiceDateLocator(Locator):
 
     Expects the data to be posix timestampes (i.e. seconds since 1970)
     """
+
     def __init__(self, numTicks=5, tz=None):
         """
         :param numTicks: target number of ticks
@@ -413,8 +413,11 @@ class BackendMatplotlib(BackendBase.BackendBase):
 
         self.fig = Figure()
         self.fig.set_facecolor("w")
+        self.fig.subplots_adjust(0.75)
+        self.axesPosition = [.15, .15, .75, .75]
+        self.axis = []
 
-        self.ax = self.fig.add_axes([.15, .15, .75, .75], label="left")
+        self.ax = self.fig.add_axes(self.axesPosition, label="left")
         self.ax2 = self.ax.twinx()
         self.ax2.set_label("right")
         # Make sure background of Axes is displayed
@@ -459,6 +462,7 @@ class BackendMatplotlib(BackendBase.BackendBase):
 
     def getItemsFromBackToFront(self, condition=None):
         """Order as BackendBase + take into account matplotlib Axes structure"""
+
         def axesOrder(item):
             if item.isOverlay():
                 return 2
@@ -515,7 +519,7 @@ class BackendMatplotlib(BackendBase.BackendBase):
                  color, symbol, linewidth, linestyle,
                  yaxis,
                  xerror, yerror,
-                 fill, alpha, symbolsize, baseline):
+                 fill, alpha, symbolsize, baseline, oneyaxis):
         for parameter in (x, y, color, symbol, linewidth, linestyle,
                           yaxis, fill, alpha, symbolsize):
             assert parameter is not None
@@ -544,7 +548,7 @@ class BackendMatplotlib(BackendBase.BackendBase):
 
             # Nx1 error array deprecated in matplotlib >=3.1 (removed in 3.3)
             if (isinstance(xerror, numpy.ndarray) and xerror.ndim == 2 and
-                        xerror.shape[1] == 1):
+                    xerror.shape[1] == 1):
                 xerror = numpy.ravel(xerror)
             if (isinstance(yerror, numpy.ndarray) and yerror.ndim == 2 and
                     yerror.shape[1] == 1):
@@ -578,7 +582,7 @@ class BackendMatplotlib(BackendBase.BackendBase):
                                    color=actualColor,
                                    marker=marker,
                                    picker=picker,
-                                   s=symbolsize**2)
+                                   s=symbolsize ** 2)
             artists.append(scatter)
 
             if fill:
@@ -590,14 +594,32 @@ class BackendMatplotlib(BackendBase.BackendBase):
                     x, _baseline, y, facecolor=actualColor[0], linestyle=''))
 
         else:  # Curve
-            curveList = axes.plot(x, y,
-                                  linestyle=linestyle,
-                                  color=color,
-                                  linewidth=linewidth,
-                                  marker=symbol,
-                                  picker=picker,
-                                  markersize=symbolsize)
-            artists += list(curveList)
+            if oneyaxis:
+                curveList = axes.plot(x, y,
+                                      linestyle=linestyle,
+                                      color=color,
+                                      linewidth=linewidth,
+                                      marker=symbol,
+                                      picker=picker,
+                                      markersize=symbolsize)
+                artists += list(curveList)
+            else:
+                if min(y) == max(y):
+                    self.addAxes(min(y) - 0.1, max(y) + 0.1, x, y,
+                                 linestyle,
+                                 color,
+                                 linewidth,
+                                 symbol,
+                                 picker,
+                                 symbolsize)
+                else:
+                    self.addAxes(min(y), max(y), x, y,
+                                 linestyle,
+                                 color,
+                                 linewidth,
+                                 symbol,
+                                 picker,
+                                 symbolsize)
 
             if fill:
                 if baseline is None:
@@ -612,6 +634,32 @@ class BackendMatplotlib(BackendBase.BackendBase):
                 artist.set_alpha(alpha)
 
         return _PickableContainer(artists)
+
+    def addAxes(self, begin, end, x, y, linestyle, color, linewidth, symbol, picker, symbolsize):
+        gap = len(self.axis) * 0.04  # TODO bei mehreren NAchkommaszellen gibt es überlappung
+        additionalAxes = self.ax.twinx()
+        additionalAxes.plot(x, y,
+                            linestyle=linestyle,
+                            color=color,
+                            linewidth=linewidth,
+                            marker=symbol,
+                            picker=picker,
+                            markersize=symbolsize)
+        additionalAxes.spines['right'].set_position(('axes', 1 + gap))
+        additionalAxes.set_frame_on(True)
+        additionalAxes.patch.set_visible(False)
+        additionalAxes.yaxis.set_major_formatter(matplotlib.ticker.OldScalarFormatter())
+        additionalAxes.set_ylim(begin, end)
+        if self.axesPosition[0] > 0.06:
+            self.axesPosition[0] = self.axesPosition[0] - .015
+        self.ax.set_position(self.axesPosition)
+        self.axis.append(additionalAxes)
+
+    def removeAxes(self, axes):
+        if self.axesPosition[0] < 0.15:
+            self.axesPosition[0] = self.axesPosition[0] + .015
+        self.fig.delaxes(axes)
+        self.axis.remove(axes)
 
     def addImage(self, data, origin, scale, colormap, alpha):
         # Non-uniform image
@@ -775,7 +823,7 @@ class BackendMatplotlib(BackendBase.BackendBase):
         elif yaxis == 'right':
             ax = self.ax2
         else:
-            assert(False)
+            assert (False)
 
         marker = self._getMarkerFromSymbol(symbol)
         if x is not None and y is not None:
@@ -852,6 +900,8 @@ class BackendMatplotlib(BackendBase.BackendBase):
     # Remove methods
 
     def remove(self, item):
+        for ax in self.axis:
+            self.removeAxes(ax)
         try:
             item.remove()
         except ValueError:
@@ -922,6 +972,7 @@ class BackendMatplotlib(BackendBase.BackendBase):
 
     def _drawOverlays(self):
         """Draw overlays if any."""
+
         def condition(item):
             return (item.isVisible() and
                     item._backendRenderer is not None and
@@ -1309,9 +1360,9 @@ class BackendMatplotlibQt(FigureCanvasQTAgg, BackendMatplotlib):
                 lineh.set_ydata((position[1], position[1]))
                 self._plot._setDirtyPlot(overlayOnly=True)
             elif lineh.get_visible():
-                    lineh.set_visible(False)
-                    linev.set_visible(False)
-                    self._plot._setDirtyPlot(overlayOnly=True)
+                lineh.set_visible(False)
+                linev.set_visible(False)
+                self._plot._setDirtyPlot(overlayOnly=True)
             # onMouseMove must trigger replot if dirty flag is raised
 
         self._plot.onMouseMove(
