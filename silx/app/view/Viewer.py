@@ -813,21 +813,21 @@ class Viewer(qt.QMainWindow):
             self.__displayIt = filename
         self.__treeview.findHdf5TreeModel().appendFile(filename)
 
-    def displaySelectedData(self):
+    def displaySelectedData(self, oneyaxis=True):
         """Called to update the dataviewer with the selected data.
         """
         selected = list(self.__treeview.selectedH5Nodes(ignoreBrokenLinks=False))
         if len(selected) == 1:
             # Update the viewer for a single selection
             data = selected[0]
-            self.__dataPanel.setData(data)
+            self.__dataPanel.setData(data, oneyaxis)
         else:
             _logger.debug("Too many data selected")
 
-    def displayData(self, data):
+    def displayData(self, data, oneyaxis=True):
         """Called to update the dataviewer with a secific data.
         """
-        self.__dataPanel.setData(data)
+        self.__dataPanel.setData(data, oneyaxis)
 
     def displaySelectedCustomData(self):
         selected = list(self.__customNxdata.selectedItems())
@@ -881,8 +881,11 @@ class Viewer(qt.QMainWindow):
                 h5 = obj.h5py_object
                 if self.isNotSuitableForMultiplePlot(h5):
                     return
-            action = qt.QAction("Open in one plot", event.source())
-            action.triggered.connect(lambda: self.displayData(selectedObjects))
+            action = qt.QAction("Open with one y axes", event.source())
+            action.triggered.connect(lambda: self.displayData(selectedObjects, oneyaxis=True))
+            menu.addAction(action)
+            action = qt.QAction("Open multiple y axis", event.source())
+            action.triggered.connect(lambda: self.displayData(selectedObjects, oneyaxis=False))
             menu.addAction(action)
             return
 

@@ -114,9 +114,9 @@ class DataPanel(qt.QWidget):
     def getCustomNxdataItem(self):
         return self.__customNxdataItem
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis):
         self.__customNxdataItem = None
-        self.__dataViewer.setData(data)
+        self.__dataViewer.setData(data, oneyaxis)
         self.__dataTitle.setVisible(data is not None)
         if data is not None:
             self.__dataTitle.setVisible(True)
@@ -155,7 +155,9 @@ class DataPanel(qt.QWidget):
         """
         data = self.__dataViewer.data()
         if data is not None:
-            if data.file is not None:
+            if isinstance(data, list):
+                self.__dataViewer.setData(None)
+            elif data.file is not None:
                 # That's an approximation, IS can't be used as h5py generates
                 # To objects for each requests to a node
                 if data.file.filename == root.file.filename:

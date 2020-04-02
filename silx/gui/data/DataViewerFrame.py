@@ -165,7 +165,7 @@ class DataViewerFrame(qt.QWidget):
         """
         return self.__dataViewer.removeView(view)
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis):
         """Set the data to view.
 
         It mostly can be a h5py.Dataset or a numpy.ndarray. Other kind of
@@ -173,7 +173,7 @@ class DataViewerFrame(qt.QWidget):
 
         :param numpy.ndarray data: The data.
         """
-        self.__dataViewer.setData(data)
+        self.__dataViewer.setData(data, oneyaxis)
 
     def data(self):
         """Returns the data"""

@@ -739,7 +739,7 @@ class PlotWidget(qt.QMainWindow):
                  xerror=None, yerror=None, z=None, selectable=None,
                  fill=None, resetzoom=True,
                  histogram=None, copy=True,
-                 baseline=None):
+                 baseline=None, oneyaxis=True):
         """Add a 1D curve given by x an y to the graph.
 
         Curves are uniquely identified by their legend.
@@ -869,7 +869,7 @@ class PlotWidget(qt.QMainWindow):
         mustBeAdded = curve is None
         if curve is None:
             # No previous curve, create a default one and add it to the plot
-            curve = items.Curve() if histogram is None else items.Histogram()
+            curve = items.Curve(oneyaxis) if histogram is None else items.Histogram()
             curve.setName(legend)
             # Set default color, linestyle and symbol
             default_color, default_linestyle = self._getColorAndStyle()

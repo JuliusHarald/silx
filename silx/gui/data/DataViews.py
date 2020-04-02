@@ -361,7 +361,7 @@ class DataView(object):
         """Clear the data from the view"""
         return None
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         """Set the data displayed by the view
 
         :param data: Data to display
@@ -586,7 +586,7 @@ class SelectOneDataView(_CompositeDataView):
         for v in self.__views.keys():
             v.clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         if self.__currentView is None:
             return
         self.__updateDisplayedView()
@@ -719,7 +719,7 @@ class SelectManyDataView(_CompositeDataView):
         for v in self.__views:
             v.clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         raise RuntimeError("Abstract view")
 
     def axesNames(self, data, info):
@@ -810,7 +810,7 @@ class _Plot1dView(DataView):
         data = _normalizeComplex(data)
         return data
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         self.getWidget().addCurve(legend="data",
                                   x=range(len(data)),
@@ -866,7 +866,7 @@ class _MultiCurvePlotView(DataView):
     def axesNames(self, data, info):  # TODO I don't need that for this class, do I?
         return ["y"]
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         normalizedData = []
         for dataset in data:
             normalizedData.append(self.normalizeData(dataset))
@@ -898,7 +898,8 @@ class _MultiCurvePlotView(DataView):
             self.getWidget().addCurve(legend=dataset.name,
                                       x=xdata,
                                       y=ydata,
-                                      resetzoom=self.__resetZoomNextTime)
+                                      resetzoom=self.__resetZoomNextTime,
+                                      oneyaxis=oneyaxis)
             self.__resetZoomNextTime = True
             self.getWidget().setXAxisFieldName(fieldNameX)
             self.getWidget().setYAxisFieldName(fieldNameY)
@@ -957,7 +958,7 @@ class _Plot2dRecordView(DataView):
         data = _normalizeComplex(data)
         return data
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         self._data = self.normalizeData(data)
 
         all_fields = sorted(self._data.dtype.fields.items(), key=lambda e: e[1][1])
@@ -1060,7 +1061,7 @@ class _Plot2dView(DataView):
         data = _normalizeComplex(data)
         return data
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         self.getWidget().addImage(legend="data",
                                   data=data,
@@ -1115,7 +1116,7 @@ class _Plot3dView(DataView):
         self.getWidget().clear()
         self.__resetZoomNextTime = True
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         self.getWidget().setData(data)
         self.__resetZoomNextTime = False
@@ -1169,7 +1170,7 @@ class _ComplexImageView(DataView):
         data = DataView.normalizeData(self, data)
         return data
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         self.getWidget().setData(data)
 
@@ -1206,7 +1207,7 @@ class _ArrayView(DataView):
     def clear(self):
         self.getWidget().setArrayData(numpy.array([[]]))
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         self.getWidget().setArrayData(data)
 
@@ -1265,7 +1266,7 @@ class _StackView(DataView):
         data = _normalizeComplex(data)
         return data
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         self.getWidget().setStack(stack=data, reset=self.__resetZoomNextTime)
         # Override the colormap, while setStack overwrite it
@@ -1303,7 +1304,7 @@ class _ScalarView(DataView):
     def clear(self):
         self.getWidget().setText("")
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         d = self.normalizeData(data)
         if silx.io.is_dataset(d):
             d = d[()]
@@ -1345,7 +1346,7 @@ class _RecordView(DataView):
     def clear(self):
         self.getWidget().setArrayData(None)
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         widget = self.getWidget()
         widget.setArrayData(data)
@@ -1388,7 +1389,7 @@ class _HexaView(DataView):
     def clear(self):
         self.getWidget().setArrayData(None)
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         widget = self.getWidget()
         widget.setArrayData(data)
@@ -1423,7 +1424,7 @@ class _Hdf5View(DataView):
         widget = self.getWidget()
         widget.setData(None)
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         widget = self.getWidget()
         widget.setData(data)
 
@@ -1495,7 +1496,7 @@ class _InvalidNXdataView(DataView):
     def clear(self):
         self.getWidget().setText("")
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         self.getWidget().setText(self._msg)
 
     def getDataPriority(self, data, info):
@@ -1563,7 +1564,7 @@ class _NXdataScalarView(DataView):
         self.getWidget().setArrayData(numpy.array([[]]),
                                       labels=True)
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         # data could be a NXdata or an NXentry
         nxd = nxdata.get_default(data, validate=False)
@@ -1605,7 +1606,7 @@ class _NXdataCurveView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
         signals_names = [nxd.signal_name] + nxd.auxiliary_signals_names
@@ -1659,7 +1660,7 @@ class _NXdataXYVScatterView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
 
@@ -1718,7 +1719,7 @@ class _NXdataImageView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
         isRgba = nxd.interpretation == "rgba-image"
@@ -1762,7 +1763,7 @@ class _NXdataComplexImageView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
 
@@ -1812,7 +1813,7 @@ class _NXdataStackView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
         signal_name = nxd.signal_name
@@ -1868,7 +1869,7 @@ class _NXdataVolumeView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
         signal_name = nxd.signal_name
@@ -1913,7 +1914,7 @@ class _NXdataVolumeAsStackView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
         signal_name = nxd.signal_name
@@ -1962,7 +1963,7 @@ class _NXdataComplexVolumeAsStackView(DataView):
     def clear(self):
         self.getWidget().clear()
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis=None):
         data = self.normalizeData(data)
         nxd = nxdata.get_default(data, validate=False)
         signal_name = nxd.signal_name

@@ -413,8 +413,11 @@ class BackendMatplotlib(BackendBase.BackendBase):
 
         self.fig = Figure()
         self.fig.set_facecolor("w")
+        self.fig.subplots_adjust(0.75)
+        self.axesPosition = [.15, .15, .75, .75]
+        self.axis = []
 
-        self.ax = self.fig.add_axes([.15, .15, .75, .75], label="left")
+        self.ax = self.fig.add_axes(self.axesPosition, label="left")
         self.ax2 = self.ax.twinx()
         self.ax2.set_label("right")
         # Make sure background of Axes is displayed
@@ -516,7 +519,7 @@ class BackendMatplotlib(BackendBase.BackendBase):
                  color, symbol, linewidth, linestyle,
                  yaxis,
                  xerror, yerror,
-                 fill, alpha, symbolsize, baseline):
+                 fill, alpha, symbolsize, baseline, oneyaxis):
         for parameter in (x, y, color, symbol, linewidth, linestyle,
                           yaxis, fill, alpha, symbolsize):
             assert parameter is not None
@@ -591,14 +594,32 @@ class BackendMatplotlib(BackendBase.BackendBase):
                     x, _baseline, y, facecolor=actualColor[0], linestyle=''))
 
         else:  # Curve
-            curveList = axes.plot(x, y,
-                                  linestyle=linestyle,
-                                  color=color,
-                                  linewidth=linewidth,
-                                  marker=symbol,
-                                  picker=picker,
-                                  markersize=symbolsize)
-            artists += list(curveList)
+            if oneyaxis:
+                curveList = axes.plot(x, y,
+                                      linestyle=linestyle,
+                                      color=color,
+                                      linewidth=linewidth,
+                                      marker=symbol,
+                                      picker=picker,
+                                      markersize=symbolsize)
+                artists += list(curveList)
+            else:
+                if min(y) == max(y):
+                    self.addAxes(min(y) - 0.1, max(y) + 0.1, x, y,
+                                 linestyle,
+                                 color,
+                                 linewidth,
+                                 symbol,
+                                 picker,
+                                 symbolsize)
+                else:
+                    self.addAxes(min(y), max(y), x, y,
+                                 linestyle,
+                                 color,
+                                 linewidth,
+                                 symbol,
+                                 picker,
+                                 symbolsize)
 
             if fill:
                 if baseline is None:
@@ -614,9 +635,31 @@ class BackendMatplotlib(BackendBase.BackendBase):
 
         return _PickableContainer(artists)
 
-    def addYAxis(self, begin, end):
+    def addAxes(self, begin, end, x, y, linestyle, color, linewidth, symbol, picker, symbolsize):
+        gap = len(self.axis) * 0.04  # TODO bei mehreren NAchkommaszellen gibt es überlappung
         additionalAxes = self.ax.twinx()
+        additionalAxes.plot(x, y,
+                            linestyle=linestyle,
+                            color=color,
+                            linewidth=linewidth,
+                            marker=symbol,
+                            picker=picker,
+                            markersize=symbolsize)
+        additionalAxes.spines['right'].set_position(('axes', 1 + gap))
+        additionalAxes.set_frame_on(True)
+        additionalAxes.patch.set_visible(False)
+        additionalAxes.yaxis.set_major_formatter(matplotlib.ticker.OldScalarFormatter())
         additionalAxes.set_ylim(begin, end)
+        if self.axesPosition[0] > 0.06:
+            self.axesPosition[0] = self.axesPosition[0] - .015
+        self.ax.set_position(self.axesPosition)
+        self.axis.append(additionalAxes)
+
+    def removeAxes(self, axes):
+        if self.axesPosition[0] < 0.15:
+            self.axesPosition[0] = self.axesPosition[0] + .015
+        self.fig.delaxes(axes)
+        self.axis.remove(axes)
 
     def addImage(self, data, origin, scale, colormap, alpha):
         # Non-uniform image
@@ -857,6 +900,8 @@ class BackendMatplotlib(BackendBase.BackendBase):
     # Remove methods
 
     def remove(self, item):
+        for ax in self.axis:
+            self.removeAxes(ax)
         try:
             item.remove()
         except ValueError:

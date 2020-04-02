@@ -101,7 +101,7 @@ class BackendBase(object):
                  color, symbol, linewidth, linestyle,
                  yaxis,
                  xerror, yerror,
-                 fill, alpha, symbolsize, baseline):
+                 fill, alpha, symbolsize, baseline, oneyaxis):
         """Add a 1D curve given by x an y to the graph.
 
         :param numpy.ndarray x: The data corresponding to the x axis

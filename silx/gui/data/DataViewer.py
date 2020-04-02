@@ -111,6 +111,7 @@ class DataViewer(qt.QFrame):
         self.__useAxisSelection = False
         self.__userSelectedView = None
         self.__hooks = None
+        self._oneyaxis = True
 
         self.__views = []
         self.__index = {}
@@ -247,7 +248,7 @@ class DataViewer(qt.QFrame):
         qt.QTimer.singleShot(10, self.__setDataInView)
 
     def __setDataInView(self):
-        self.__currentView.setData(self.__displayedData)
+        self.__currentView.setData(self.__displayedData, oneyaxis=self._oneyaxis)
 
     def setDisplayedView(self, view):
         """Set the displayed view.
@@ -459,7 +460,7 @@ class DataViewer(qt.QFrame):
         """
         return self.__views
 
-    def setData(self, data):
+    def setData(self, data, oneyaxis):
         """Set the data to view.
 
         It mostly can be a h5py.Dataset or a numpy.ndarray. Other kind of
@@ -467,6 +468,7 @@ class DataViewer(qt.QFrame):
 
         :param numpy.ndarray data: The data.
         """
+        self._oneyaxis = oneyaxis
         self.__data = data
         self._invalidateInfo()
         self.__displayedData = None

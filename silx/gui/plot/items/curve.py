@@ -173,7 +173,7 @@ class Curve(PointsBase, ColorMixIn, YAxisMixIn, FillMixIn, LabelsMixIn,
 
     _DEFAULT_BASELINE = None
 
-    def __init__(self):
+    def __init__(self, oneyaxis):
         PointsBase.__init__(self)
         ColorMixIn.__init__(self)
         YAxisMixIn.__init__(self)
@@ -185,6 +185,7 @@ class Curve(PointsBase, ColorMixIn, YAxisMixIn, FillMixIn, LabelsMixIn,
         self._highlightStyle = self._DEFAULT_HIGHLIGHT_STYLE
         self._highlighted = False
         self._setBaseline(Curve._DEFAULT_BASELINE)
+        self._oneyaxis = oneyaxis
 
         self.sigItemChanged.connect(self.__itemChanged)
 
@@ -217,7 +218,8 @@ class Curve(PointsBase, ColorMixIn, YAxisMixIn, FillMixIn, LabelsMixIn,
                                 fill=self.isFill(),
                                 alpha=self.getAlpha(),
                                 symbolsize=style.getSymbolSize(),
-                                baseline=self.getBaseline(copy=False))
+                                baseline=self.getBaseline(copy=False),
+                                oneyaxis=self._oneyaxis)
 
     def __getitem__(self, item):
         """Compatibility with PyMca and silx <= 0.4.0"""
